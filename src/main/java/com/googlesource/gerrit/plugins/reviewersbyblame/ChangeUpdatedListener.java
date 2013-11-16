@@ -34,7 +34,6 @@ import com.google.gerrit.reviewdb.client.Project;
 import com.google.gerrit.reviewdb.server.ReviewDb;
 import com.google.gerrit.server.CurrentUser;
 import com.google.gerrit.server.IdentifiedUser;
-import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.gerrit.server.events.ChangeEvent;
 import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
@@ -59,7 +58,6 @@ class ChangeUpdatedListener implements ChangeListener {
   private final IdentifiedUser.GenericFactory identifiedUserFactory;
   private final ThreadLocalRequestContext tl;
   private final SchemaFactory<ReviewDb> schemaFactory;
-  private final PluginConfigFactory cfg;
   private final String pluginName;
   private ReviewDb db;
 
@@ -69,7 +67,6 @@ class ChangeUpdatedListener implements ChangeListener {
       final IdentifiedUser.GenericFactory identifiedUserFactory,
       final ThreadLocalRequestContext tl,
       final SchemaFactory<ReviewDb> schemaFactory,
-      final PluginConfigFactory cfg,
       final @PluginName String pluginName) {
     this.reviewersByBlameFactory = reviewersByBlameFactory;
     this.repoManager = repoManager;
@@ -77,7 +74,6 @@ class ChangeUpdatedListener implements ChangeListener {
     this.identifiedUserFactory = identifiedUserFactory;
     this.tl = tl;
     this.schemaFactory = schemaFactory;
-    this.cfg = cfg;
     this.pluginName = pluginName;
   }
 
@@ -89,15 +85,7 @@ class ChangeUpdatedListener implements ChangeListener {
     PatchSetCreatedEvent e = (PatchSetCreatedEvent) event;
     Project.NameKey projectName = new Project.NameKey(e.change.project);
 
-    int maxReviewers;
-    try {
-      maxReviewers =
-          cfg.getFromProjectConfigWithInheritance(projectName, pluginName)
-             .getInt("maxReviewers", 3);
-    } catch (NoSuchProjectException x) {
-      log.error(x.getMessage(), x);
-      return;
-    }
+    int maxReviewers = 3;
     if (maxReviewers <= 0) {
       return;
     }
